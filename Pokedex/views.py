@@ -3,6 +3,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core import serializers
 
 from http import HTTPStatus
 
@@ -27,6 +28,26 @@ def addType(typeName):
         return True
     except:
         raise Exception("Add Types Error")
+
+def getTypeName(typeObjList):
+    try:
+        types = []
+        for typeObj in typeObjList:
+            types.append(typeObj.type_name)
+        return types
+    except:
+        raise Exception("Get Types Error")
+
+def getPokemon(pokemonObj):
+    types = getTypeName(pokemonObj.types.all())
+    pokemon = {
+        'number': pokemonObj.number,
+        'name': pokemonObj.name,
+        'types': types
+    }
+    #TODO add evolutions
+    return pokemon
+
 
 
 def create(request):
@@ -77,12 +98,14 @@ def create(request):
 def update(request):
     form = request.POST or None
     if form: #check request method
+        id = form.get('id')
         number = form.get('number')
         name = form.get('name')
         types = form.getlist('type')
 
-
-        if (not variablesValidation(number)): #check variables
+        if (not variablesValidation(id)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "id")
+        elif (not variablesValidation(number)): 
             return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables number")
         elif (not variablesValidation(name)):
             return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables name")
@@ -97,8 +120,10 @@ def update(request):
                     
                     if not type:
                         addType(typeName)
-                
-                pokemon = Pokemon.objects.get(number=number)
+
+                pokemon = Pokemon.objects.get(id=id)
+                print(name)
+                pokemon.number = number
                 pokemon.name = name
                 pokemon.save()
                 pokemon.types.clear()
@@ -111,12 +136,54 @@ def update(request):
                     'types': types
                 }
                 response = JsonResponse(data)
-                response.status_code = HTTPStatus.CREATED
+                response.status_code = HTTPStatus.OK
                 return response
 
             except Exception as e:
                 print(e)
                 return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+
+    else:
+        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+
+def retrieve(request):
+    form = request.POST or None
+    if form: #check request method
+        id = form.get('id')
+        if (not variablesValidation(id)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "id")
+        try:
+            pokemonObj = Pokemon.objects.get(id=id)
+            response = JsonResponse(getPokemon(pokemonObj))
+            response.status_code = HTTPStatus.OK
+            return response
+                
+        except Exception as e:
+            print(e)
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+
+    else:
+        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+
+
+def retrieveByType(request):
+    form = request.POST or None
+    if form: #check request method
+        types = form.getlist('type')
+        if (not variablesValidation(types)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "type")
+        try:
+            responseData = []
+            pokemonObjList = Pokemon.objects.filter(types__type_name__in = types)
+            for pokemonObj in pokemonObjList:
+                responseData.append(getPokemon(pokemonObj))
+            response = JsonResponse(responseData, safe=False)
+            response.status_code = HTTPStatus.OK
+            return response
+                
+        except Exception as e:
+            print(e)
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
         return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
