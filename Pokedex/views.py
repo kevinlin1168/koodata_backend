@@ -44,7 +44,6 @@ def getEvolutions(evolutionObjList):
     try:
         evolutions = []
         for evolutionObj in evolutionObjList:
-            print(evolutionObj)
             evolutions.append(getEvolutionObj(evolutionObj))
         return evolutions
     except:
@@ -249,6 +248,29 @@ def deleteEvolution(request):
             response.status_code = HTTPStatus.OK
             return response
                 
+        except Exception as e:
+            print(e)
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+
+    else:
+        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+
+def deletePokemon(request):
+    form = request.POST or None
+    if form: #check request method
+        id = form.get('id')
+        if (not variablesValidation(id)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables id")
+        try:
+            if (Pokemon.objects.filter(evolutions__id__in = id)):
+                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'Can not delete Pokemon which is evolution of other Pokemon')
+            else:
+                pokemon = Pokemon.objects.get(id = id)
+                pokemon.delete()
+                response = HttpResponse()
+                response.status_code = HTTPStatus.OK
+                return response
+
         except Exception as e:
             print(e)
             return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')

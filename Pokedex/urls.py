@@ -7,5 +7,6 @@ urlpatterns = [
     url('retrieve/', views.retrieve),
     url('retrieveByType/', views.retrieveByType),
     url('addEvolution/', views.addEvolution),
-    url('deleteEvolution/', views.deleteEvolution)
+    url('deleteEvolution/', views.deleteEvolution),
+    url('deletePokemon', views.deletePokemon)
 ]
