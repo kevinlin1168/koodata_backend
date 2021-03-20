@@ -151,7 +151,7 @@ def retrieve(request):
     if form: #check request method
         id = form.get('id')
         if (not variablesValidation(id)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "id")
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables id")
         try:
             pokemonObj = Pokemon.objects.get(id=id)
             response = JsonResponse(getPokemon(pokemonObj))
@@ -171,13 +171,68 @@ def retrieveByType(request):
     if form: #check request method
         types = form.getlist('type')
         if (not variablesValidation(types)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "type")
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables type")
         try:
             responseData = []
             pokemonObjList = Pokemon.objects.filter(types__type_name__in = types)
             for pokemonObj in pokemonObjList:
                 responseData.append(getPokemon(pokemonObj))
             response = JsonResponse(responseData, safe=False)
+            response.status_code = HTTPStatus.OK
+            return response
+                
+        except Exception as e:
+            print(e)
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+
+    else:
+        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+
+
+def addEvolution(request):
+    form = request.POST or None
+    if form: #check request method
+        pokemonID = form.get('pokemonID')
+        evolutionID = form.get('evolutionID')
+        if (not variablesValidation(pokemonID)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables pokemonID")
+        elif (not variablesValidation(evolutionID)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables evolutionID")
+        try:
+            pokemon = Pokemon.objects.get(id=pokemonID)
+            evolutionPokemon = Pokemon.objects.get(id=evolutionID)
+            if(pokemon and evolutionPokemon):
+                pokemon.evolutions.add(evolutionPokemon)
+            else:
+                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'Can not find pokemon')
+            response = HttpResponse()
+            response.status_code = HTTPStatus.OK
+            return response
+                
+        except Exception as e:
+            print(e)
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+
+    else:
+        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+
+def deleteEvolution(request):
+    form = request.POST or None
+    if form: #check request method
+        pokemonID = form.get('pokemonID')
+        evolutionID = form.get('evolutionID')
+        if (not variablesValidation(pokemonID)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables pokemonID")
+        elif (not variablesValidation(evolutionID)): #check variables
+            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables evolutionID")
+        try:
+            pokemon = Pokemon.objects.get(id=pokemonID)
+            evolutionPokemon = Pokemon.objects.get(id=evolutionID)
+            if(pokemon and evolutionPokemon):
+                pokemon.evolutions.remove(evolutionPokemon)
+            else:
+                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'Can not find pokemon')
+            response = HttpResponse()
             response.status_code = HTTPStatus.OK
             return response
                 

@@ -8,4 +8,4 @@ class Pokemon(models.Model):
     number = models.CharField(max_length=3, unique=True)
     name = models.CharField(max_length=50, unique=True)
     types = models.ManyToManyField(Type)
-    evolutions = models.ManyToManyField('self')
+    evolutions = models.ManyToManyField('Pokemon')
