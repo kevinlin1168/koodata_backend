@@ -37,15 +37,28 @@ def getTypeName(typeObjList):
         return types
     except:
         raise Exception("Get Types Error")
+def getEvolutionObj(evolutionObj):
+    return getPokemon(evolutionObj)
+
+def getEvolutions(evolutionObjList):
+    try:
+        evolutions = []
+        for evolutionObj in evolutionObjList:
+            print(evolutionObj)
+            evolutions.append(getEvolutionObj(evolutionObj))
+        return evolutions
+    except:
+        raise Exception("Get Evolutions Error")
 
 def getPokemon(pokemonObj):
     types = getTypeName(pokemonObj.types.all())
+    evolutions = getEvolutions(pokemonObj.evolutions.all())
     pokemon = {
         'number': pokemonObj.number,
         'name': pokemonObj.name,
-        'types': types
+        'types': types,
+        'evolutions': evolutions
     }
-    #TODO add evolutions
     return pokemon
 
 
