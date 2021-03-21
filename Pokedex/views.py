@@ -17,10 +17,16 @@ def variablesValidation(value):
     else:
         return False
 
-def createErrorJsonResponse(status, reason):
-    response = JsonResponse({'error': reason})
+def createJsonResponse(status, errorReason = '', data = {}, safe=True):
+    responseBody = {
+        'isSuccess': status == HTTPStatus.OK,
+        'error': errorReason,
+        'data': data
+    }
+    response = JsonResponse(responseBody, safe=safe)
     response.status_code = status
     return response
+
 
 def addType(typeName):
     try:
@@ -73,11 +79,11 @@ def create(request):
 
 
         if (not variablesValidation(number)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables number")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables number")
         elif (not variablesValidation(name)):
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables name")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables name")
         elif (not variablesValidation(types)):
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables type")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables type")
         else: #create pokemon
             try:
                 for typeName in types:
@@ -93,23 +99,16 @@ def create(request):
                 for typeName in types:
                     type = Type.objects.get(type_name=typeName)
                     pokemon.types.add(type)
-                data = {
-                    'number': number,
-                    'name': name,
-                    'types': types
-                }
-                response = JsonResponse(data)
-                response.status_code = HTTPStatus.OK
-                return response
+                return createJsonResponse(HTTPStatus.OK, '', data)
 
             except IntegrityError:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'Try to create pokemon of same number or name')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'Try to create pokemon of same number or name')
 
             except:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
-        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+        return createJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
 
 
 def update(request):
@@ -121,13 +120,13 @@ def update(request):
         types = form.getlist('type')
 
         if (not variablesValidation(id)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "id")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "id")
         elif (not variablesValidation(number)): 
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables number")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables number")
         elif (not variablesValidation(name)):
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables name")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables name")
         elif (not variablesValidation(types)):
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables type")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables type")
         else: #update pokemon
             try:
                 pokemon = Pokemon.objects.get(id=id)
@@ -147,44 +146,35 @@ def update(request):
                 for typeName in types:
                     type = Type.objects.get(type_name=typeName)
                     pokemon.types.add(type)
-                data = {
-                    'number': number,
-                    'name': name,
-                    'types': types
-                }
-                response = JsonResponse(data)
-                response.status_code = HTTPStatus.OK
-                return response
+                return createJsonResponse(HTTPStatus.OK, '', data)
 
             except ObjectDoesNotExist:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'The id do not exist')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'The id do not exist')
             except IntegrityError:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'Try to update pokemon of same number or name')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'Try to update pokemon of same number or name')
             except:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
-        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+        return createJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
 
 def retrieve(request):
     form = request.POST or None
     if form: #check request method
         id = form.get('id')
         if (not variablesValidation(id)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables id")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables id")
         try:
-            pokemonObj = Pokemon.objects.get(id=id)
-            response = JsonResponse(getPokemon(pokemonObj))
-            response.status_code = HTTPStatus.OK
-            return response
+            return createJsonResponse(HTTPStatus.OK, '', getPokemon(pokemonObj))
+
         
         except ObjectDoesNotExist:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'The id do not exist')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'The id do not exist')
         except:
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
-        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+        return createJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
 
 
 def retrieveByType(request):
@@ -192,21 +182,19 @@ def retrieveByType(request):
     if form: #check request method
         types = form.getlist('type')
         if (not variablesValidation(types)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables type")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables type")
         try:
             responseData = []
             pokemonObjList = Pokemon.objects.filter(types__type_name__in = types)
             for pokemonObj in pokemonObjList:
                 responseData.append(getPokemon(pokemonObj))
-            response = JsonResponse(responseData, safe=False)
-            response.status_code = HTTPStatus.OK
-            return response
+            return createJsonResponse(HTTPStatus.OK, '', responseData, False)
                 
         except:
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
-        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+        return createJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
 
 
 def addEvolution(request):
@@ -215,23 +203,21 @@ def addEvolution(request):
         pokemonID = form.get('pokemonID')
         evolutionID = form.get('evolutionID')
         if (not variablesValidation(pokemonID)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables pokemonID")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables pokemonID")
         elif (not variablesValidation(evolutionID)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables evolutionID")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables evolutionID")
         try:
             pokemon = Pokemon.objects.get(id=pokemonID)
             evolutionPokemon = Pokemon.objects.get(id=evolutionID)
             pokemon.evolutions.add(evolutionPokemon)
-            response = HttpResponse()
-            response.status_code = HTTPStatus.OK
-            return response
+            return createJsonResponse(HTTPStatus.OK)
         except ObjectDoesNotExist:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'The id of pokemon or evolution do not exist')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'The id of pokemon or evolution do not exist')
         except:
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
-        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+        return createJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
 
 def deleteEvolution(request):
     form = request.POST or None
@@ -239,49 +225,45 @@ def deleteEvolution(request):
         pokemonID = form.get('pokemonID')
         evolutionID = form.get('evolutionID')
         if (not variablesValidation(pokemonID)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables pokemonID")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables pokemonID")
         elif (not variablesValidation(evolutionID)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables evolutionID")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables evolutionID")
         try:
             try:
                 pokemon = Pokemon.objects.get(id=pokemonID)
                 evolutionPokemon = Pokemon.objects.get(id=evolutionID)
             except ObjectDoesNotExist:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'The id of pokemon or evolution do not exist')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'The id of pokemon or evolution do not exist')
             if(Pokemon.objects.filter(id = pokemonID, evolutions__id__in = evolutionID)):
                 pokemon.evolutions.remove(evolutionPokemon)
             else:
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'The evolution do not exist')
-            response = HttpResponse()
-            response.status_code = HTTPStatus.OK
-            return response
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'The evolution do not exist')
+            return createJsonResponse(HTTPStatus.OK)
 
         except:
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
-        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+        return createJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
 
 def deletePokemon(request):
     form = request.POST or None
     if form: #check request method
         id = form.get('id')
         if (not variablesValidation(id)): #check variables
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables id")
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables id")
         try:
             if (Pokemon.objects.filter(evolutions__id__in = id)):
-                return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'Can not delete Pokemon which is evolution of other Pokemon')
+                return createJsonResponse(HTTPStatus.BAD_REQUEST, 'Can not delete Pokemon which is evolution of other Pokemon')
             else:
                 pokemon = Pokemon.objects.get(id = id)
                 pokemon.delete()
-                response = HttpResponse()
-                response.status_code = HTTPStatus.OK
-                return response
+                return createJsonResponse(HTTPStatus.OK)
 
         except ObjectDoesNotExist:
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'The id of pokemon do not exist')
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, 'The id of pokemon do not exist')
         except:
-            return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, 'An exception occurred')
 
     else:
-        return createErrorJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
+        return createJsonResponse(HTTPStatus.BAD_REQUEST, "Request method error")
