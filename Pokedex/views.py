@@ -165,6 +165,7 @@ def retrieve(request):
         if (not variablesValidation(id)): #check variables
             return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables id")
         try:
+            pokemonObj = Pokemon.objects.get(id=id)
             return createJsonResponse(HTTPStatus.OK, '', getPokemon(pokemonObj))
 
         
