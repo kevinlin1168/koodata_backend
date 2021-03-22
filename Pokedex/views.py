@@ -207,6 +207,8 @@ def addEvolution(request):
             return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables pokemonID")
         elif (not variablesValidation(evolutionID)): #check variables
             return createJsonResponse(HTTPStatus.BAD_REQUEST, "Missing variables evolutionID")
+        elif (pokemonID == evolutionID):
+            return createJsonResponse(HTTPStatus.BAD_REQUEST, "Can not input the same id")
         try:
             pokemon = Pokemon.objects.get(id=pokemonID)
             evolutionPokemon = Pokemon.objects.get(id=evolutionID)
